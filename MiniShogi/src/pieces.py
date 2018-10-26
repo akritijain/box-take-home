@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Piece_Types(Enum):
+class PieceType(Enum):
     KING = 1
     ROOK = 2
     BISHOP = 3
@@ -13,8 +13,8 @@ class Player(Enum):
     UPPER = 2
 
 # maps piece string representation to piece enum
-str_to_piece = {'k' : Piece_Types.KING, 'r' : Piece_Types.ROOK, 'b' : Piece_Types.BISHOP,
-'g' : Piece_Types.GOLD_GENERAL, 's' : Piece_Types.SILVER_GENERAL, 'p' : Piece_Types.PAWN}
+str_to_piece = {'k' : PieceType.KING, 'r' : PieceType.ROOK, 'b' : PieceType.BISHOP,
+'g' : PieceType.GOLD_GENERAL, 's' : PieceType.SILVER_GENERAL, 'p' : PieceType.PAWN}
 # board size
 N = 5
 
@@ -25,14 +25,18 @@ class Piece:
         self.player = player
 
     def piece_from_string(piece_str):
-        piece_type = str_to_piece[piece_str[0].lower()]
-        promoted = False
+        #promoted piece
         if len(piece_str) == 2:
-            promoted = True
-        player = Player.LOWER
-        if (piece_str[0].isupper()):
-            player = Player.UPPER
-        return Piece(piece_type, promoted, player)
+            player = Player.LOWER
+            if (piece_str[1].isupper()):
+                player = Player.UPPER
+            return Piece(str_to_piece[piece_str[1].lower()], True, player)
+        #regular piece
+        else:
+            player = Player.LOWER
+            if(piece_str.isupper()):
+                player = Player.UPPER
+            return Piece(str_to_piece[piece_str.lower()], False, player)
 
     def possible_moves(self, pos):
         """
@@ -42,18 +46,18 @@ class Piece:
         if self == None:
             return None
         else:
-            if self.piece_type == Piece_Types.KING:
-                return king_moves(pos)
-            if self.piece_type == Piece_Types.ROOK:
-                return rook_moves(pos)
-            if self.piece_type == Piece_Types.BISHOP:
-                return bishop_moves(pos)
-            if self.piece_type == Piece_Types.GOLD_GENERAL:
-                return gold_general_moves(pos)
-            if self.piece_type == Piece_Types.SILVER_GENERAL:
-                return silver_general_moves(pos)
-            if self.piece_type == Piece_Types.PAWN:
-                return pawn_moves(pos)
+            if self.piece_type == PieceType.KING:
+                return Piece.king_moves(pos)
+            if self.piece_type == PieceType.ROOK:
+                return Piece.rook_moves(pos)
+            if self.piece_type == PieceType.BISHOP:
+                return Piece.bishop_moves(pos)
+            if self.piece_type == PieceType.GOLD_GENERAL:
+                return Piece.gold_general_moves(pos, self.player)
+            if self.piece_type == PieceType.SILVER_GENERAL:
+                return Piece.silver_general_moves(pos, self.player)
+            if self.piece_type == PieceType.PAWN:
+                return Piece.pawn_moves(pos, self.player)
             #should never reach this point
             return None
 
@@ -78,26 +82,26 @@ class Piece:
         right = pos[0] + 1
         left = pos[0] - 1
         up = pos[1] + 1
-        down = pos[0] - 1
+        down = pos[1] - 1
         #go one move up
         if up < N:
             end_pos.add((pos[0], up))
         #go one move down
-        if down > 0:
+        if down >= 0:
             end_pos.add((pos[0], down))
         #go one move right and diagonal moves on the right
         if right < N:
             end_pos.add((right, pos[1]))
             if up < N:
                 end_pos.add((right, up))
-            if down > 0:
+            if down >= 0:
                 end_pos.add((right, down))
         #go one move left and diagonal moves on the left
-        if left > 0:
+        if left >= 0:
             end_pos.add((left, pos[1]))
             if up < N:
                 end_pos.add((left, up))
-            if down > 0:
+            if down >= 0:
                 end_pos.add((left, down))
         return end_pos
 
@@ -139,7 +143,7 @@ class Piece:
             i += 1
         #top left diagonal
         i = 1
-        while ((pos[0] - i) < N) and ((pos[1] + i) >= 0):
+        while ((pos[0] - i) >= 0) and ((pos[1] + i) < N):
             end_pos.add((pos[0] + i, pos[1] - i))
             i += 1
         #bottom left diagonal
@@ -149,7 +153,7 @@ class Piece:
             i += 1
         return end_pos
 
-    def gold_general_moves(pos):
+    def gold_general_moves(pos, player):
         """
         Helper function that takes a position as input and returns a set of
         all positions a gold general piece can move to from there
@@ -158,26 +162,29 @@ class Piece:
         right = pos[0] + 1
         left = pos[0] - 1
         up = pos[1] + 1
-        down = pos[0] - 1
+        down = pos[1] - 1
+        if player == Player.UPPER:
+            up = pos[1] - 1
+            down = pos[1] + 1
         #go one move up
-        if up < N:
+        if up < N and up >= 0:
             end_pos.add((pos[0], up))
         #go one move down
-        if down > 0:
+        if down < N and down >= 0:
             end_pos.add((pos[0], down))
         #go one move right and top diagonal on the right
         if right < N:
             end_pos.add((right, pos[1]))
-            if up < N:
+            if up < N and up >= 0:
                 end_pos.add((right, up))
         #go one move left and top diagonal on the left
-        if left > 0:
+        if left >= 0:
             end_pos.add((left, pos[1]))
-            if up < N:
+            if up < N and up >= 0:
                 end_pos.add((left, up))
         return end_pos
 
-    def silver_general_moves(pos):
+    def silver_general_moves(pos, player):
         """
         Helper function that takes a position as input and returns a set of
         all positions a silver general piece can move to from there
@@ -186,21 +193,24 @@ class Piece:
         right = pos[0] + 1
         left = pos[0] - 1
         up = pos[1] + 1
-        down = pos[0] - 1
+        down = pos[1] - 1
+        if player == Player.UPPER:
+            up = pos[1] - 1
+            down = pos[1] + 1
         #go one move up
-        if up < N:
+        if up < N and up >= 0:
             end_pos.add((pos[0], up))
         #go one move right and diagonal moves on the right
         if right < N:
-            if up < N:
+            if up < N and up >= 0:
                 end_pos.add((right, up))
-            if down > 0:
+            if down < N and down >= 0:
                 end_pos.add((right, down))
         #go one move left and diagonal moves on the left
-        if left > 0:
-            if up < N:
+        if left >= 0:
+            if up < N and up >= 0:
                 end_pos.add((left, up))
-            if down > 0:
+            if down < N and down >= 0:
                 end_pos.add((left, down))
         return end_pos
 
@@ -210,6 +220,9 @@ class Piece:
         all positions a pawn piece can move to from there
         """
         end_pos = set()
-        if (pos[1] + 1) < N:
-            end_pos.add(pos[0], pos[1] + 1)
+        up = pos[1] + 1
+        if player == Player.UPPER:
+            up = pos[1] - 1
+        if up < N and up >= 0:
+            end_pos.add(pos[0], up)
         return end_pos

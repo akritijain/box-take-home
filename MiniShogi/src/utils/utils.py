@@ -38,6 +38,12 @@ def stringifyCaptured(captured):
     s += str(captured[i])
     return s
 
+def changeCase(piece):
+    if piece.isupper():
+        return piece.lower()
+    else:
+        return piece.upper()
+
 def parseTestCase(path):
     f = open(path)
     line = f.readline()
