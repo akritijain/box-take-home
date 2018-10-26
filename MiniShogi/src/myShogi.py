@@ -8,9 +8,9 @@ game_end_string = {GameEnd.ILLEGAL_MOVE : 'Illegal move.', GameEnd.CHECKMATE : "
 
 def main():
     #initialize game
-    board = [['r','','','','K'],['b','','','','G'],['s','','','','S'],['g','','','','B'],['k','','','','R']]
-    capturedU = ['P', 'Q']
-    capturedL = ['p', 'q']
+    board = [['k','p','','','R'],['g','','','','B'],['s','','','','S'],['b','','','','G'],['r','','','P','K']]
+    capturedU = []
+    capturedL = []
     new_game = MiniShogi(board, capturedL, capturedU, 0)
     #main loop
     while not(new_game.game_end):

@@ -214,7 +214,7 @@ class Piece:
                 end_pos.add((left, down))
         return end_pos
 
-    def pawn_moves(pos):
+    def pawn_moves(pos, player):
         """
         Helper function that takes a position as input and returns a set of
         all positions a pawn piece can move to from there
@@ -224,5 +224,5 @@ class Piece:
         if player == Player.UPPER:
             up = pos[1] - 1
         if up < N and up >= 0:
-            end_pos.add(pos[0], up)
+            end_pos.add((pos[0], up))
         return end_pos

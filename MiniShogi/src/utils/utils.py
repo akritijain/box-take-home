@@ -31,6 +31,8 @@ def stringifyBoard(board):
 
 def stringifyCaptured(captured):
     s = ''
+    if (len(captured) == 0):
+        return s
     i = 0
     while i < (len(captured)-1):
         s += str(captured[i]) + ' '
