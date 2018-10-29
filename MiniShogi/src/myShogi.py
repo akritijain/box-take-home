@@ -32,7 +32,7 @@ def file_mode(filename):
     elif game.winner == None:
         return
     else:
-        print(string_mappings.player_string[game.winner] + " player wins. " + string_mappings.game_end_string[game.game_end_cause])
+        print(string_mappings.player_string[game.winner] + " player wins.  " + string_mappings.game_end_string[game.game_end_cause])
 
 
 def interactive_mode():

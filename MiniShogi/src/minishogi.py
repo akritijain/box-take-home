@@ -45,8 +45,8 @@ class MiniShogi:
         if (self.interactive):
             board_string = utils.stringifyBoard(self.board)
             print(board_string)
-            print ("Captures UPPER:" + utils.stringifyCaptured(self.captured[Player.UPPER]))
-            print ("Captures lower:" + utils.stringifyCaptured(self.captured[Player.LOWER]) + '\n')
+            print ("Captures UPPER: " + utils.stringifyCaptured(self.captured[Player.UPPER]))
+            print ("Captures lower: " + utils.stringifyCaptured(self.captured[Player.LOWER]) + '\n')
         threatening_pieces = self.in_check(self.player_turn)
         if len(threatening_pieces) > 0:
             possible_escape_moves = self.moves_to_escape_check(self.player_turn, threatening_pieces)
