@@ -100,13 +100,35 @@ class MiniShogi:
         self.player_to_pieces[self.player_turn].add(end_pos)
         return True
 
-    def drop_piece(self, drop_pos):
+    def drop_piece(self, piece_type, drop_pos):
         """
         Checks if drop position is valid, drops piece on the board and updates the
         board state.
         Returns a boolean to indicate whether piece was dropped or not.
         """
-        pass
+        if drop_pos in self.pos_to_piece:
+            self.illegal_move_by(self.player_turn)
+            return False
+
+        captured_pieces = self.captured[self.player_turn]
+        for piece_str in captured_pieces:
+            piece = Piece.piece_from_string(piece_str)
+            if piece.piece_type == piece_type:
+                self.pos_to_piece[drop_pos] = piece
+                self.player_to_pieces[self.player_turn].add(drop_pos)
+                self.board[drop_pos[0]][drop_pos[1]] = piece_str
+                captured_pieces.remove(piece_str)
+                #check if dropping a pawn causes check mate
+                if piece.piece_type == PieceType.PAWN:
+                    other_player = self.get_opposing_player(self.player_turn)
+                    threatening_pieces =  self.in_check(other_player)
+                    if len(threatening_pieces) > 0 and len(self.moves_to_escape_check(other_player, threatening_pieces)) == 0:
+                         self.illegal_move_by(self.player_turn)
+                         return False
+                return True
+        #piece does not exist in player's captured
+        self.illegal_move_by(self.player_turn)
+        return False
 
     def promote_piece(self, start_pos, end_pos):
         """
@@ -114,24 +136,29 @@ class MiniShogi:
         Returns a boolean to indicate success.
         """
         pass
-    def make_move(self, start_pos, end_pos, move_type):
+    def make_move(self, param1, param2, move_type):
         """
         Determines the kind of move user is trying to make, and executes it while
         performing all validity checks
         Returns a boolean to indicate success.
         """
         if move_type == MoveType.MOVE:
-            if (self.move_piece(start_pos, end_pos) == True):
+            if self.move_piece(param1, param2):
                 if self.in_check(self.player_turn):
-                    self.game_end = True
-                    self.game_end_cause = GameEnd.ILLEGAL_MOVE
-                    self.winner = self.get_opposing_player(self.player_turn)
+                    self.illegal_move_by(self.player_turn)
                 self.increment_turn()
                 return True
             else:
-                self.game_end = True
-                self.game_end_cause = GameEnd.ILLEGAL_MOVE
-                self.winner = self.get_opposing_player(self.player_turn)
+                self.illegal_move_by(self.player_turn)
+                return False
+        if move_type == MoveType.DROP:
+            if self.drop_piece(param1, param2):
+                if self.in_check(self.player_turn):
+                    self.illegal_move_by(self.player_turn)
+                self.increment_turn()
+                return True
+            else:
+                self.illegal_move_by(self.player_turn)
                 return False
 
     def in_check(self, player):
@@ -173,6 +200,11 @@ class MiniShogi:
                         for pos in pos_to_moves:
                             if move_pos in pos_to_moves[pos]:
                                 moves_list.append((MoveType.MOVE, pos, move_pos))
+                        #generate drop possibilities
+                        captured_pieces = self.captured[player]
+                        for cap_pc in captured_pieces:
+                            pc_type = string_mappings.str_to_piece[cap_pc.lower()]
+                            moves_list.append((MoveType.DROP, pc_type, move_pos))
                 for pos in pos_to_moves:
                     if piece_pos in pos_to_moves[pos]:
                         moves_list.append((MoveType.MOVE, pos, piece_pos))
@@ -227,3 +259,8 @@ class MiniShogi:
             self.player_turn = Player.UPPER
         else:
             self.player_turn = Player.LOWER
+
+    def illegal_move_by(self, player):
+        self.game_end = True
+        self.game_end_cause = GameEnd.ILLEGAL_MOVE
+        self.winner = self.get_opposing_player(player)
