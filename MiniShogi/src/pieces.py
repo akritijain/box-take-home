@@ -35,14 +35,24 @@ class Piece:
             if self.piece_type == PieceType.KING:
                 return Piece.king_moves(pos)
             if self.piece_type == PieceType.ROOK:
-                return Piece.rook_moves(pos, pos_to_piece)
+                moves = Piece.rook_moves(pos, pos_to_piece)
+                if self.promoted == True:
+                    moves = moves.union(Piece.king_moves(pos))
+                return moves
             if self.piece_type == PieceType.BISHOP:
-                return Piece.bishop_moves(pos, pos_to_piece)
+                moves = Piece.bishop_moves(pos, pos_to_piece)
+                if self.promoted == True:
+                    moves = moves.union(Piece.king_moves(pos))
+                return moves
             if self.piece_type == PieceType.GOLD_GENERAL:
                 return Piece.gold_general_moves(pos, self.player)
             if self.piece_type == PieceType.SILVER_GENERAL:
+                if self.promoted == True:
+                    return Piece.gold_general_moves(pos, self.player)
                 return Piece.silver_general_moves(pos, self.player)
             if self.piece_type == PieceType.PAWN:
+                if self.promoted == True:
+                    return Piece.gold_general_moves(pos, self.player)
                 return Piece.pawn_moves(pos, self.player)
             #should never reach this point
             return None
@@ -262,3 +272,20 @@ class Piece:
                 for x in range(piece_pos[0] + inc, king_pos[0], inc):
                     attack_moves.add((king_pos[0], x))
             return attack_moves
+
+    def promote_piece(self, start_pos, end_pos):
+            promotion_zone = Piece.promotion_zone_for(self.player)
+            if self.piece_type == PieceType.KING or self.piece_type == PieceType.GOLD_GENERAL:
+                return False
+            if (start_pos in promotion_zone) or (end_pos in promotion_zone):
+                self.promoted = True
+                return True
+
+    def promotion_zone_for(player):
+            promotion_zone = set()
+            y = 0
+            if player == Player.LOWER:
+                y = N-1
+            for x in range(N):
+                promotion_zone.add((x, y))
+            return promotion_zone

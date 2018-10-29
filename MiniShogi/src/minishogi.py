@@ -51,7 +51,7 @@ class MiniShogi:
             if len(possible_escape_moves) == 0:
                 self.game_end = True
                 self.game_end_cause = GameEnd.CHECKMATE
-                self.winner = self.get_opposing_player(self.player_turn)
+                self.winner = MiniShogi.get_opposing_player(self.player_turn)
                 return None
             print("Player " + string_mappings.player_string[self.player_turn] + " is in check")
             for move in possible_escape_moves:
@@ -120,7 +120,7 @@ class MiniShogi:
                 captured_pieces.remove(piece_str)
                 #check if dropping a pawn causes check mate
                 if piece.piece_type == PieceType.PAWN:
-                    other_player = self.get_opposing_player(self.player_turn)
+                    other_player = MiniShogi.get_opposing_player(self.player_turn)
                     threatening_pieces =  self.in_check(other_player)
                     if len(threatening_pieces) > 0 and len(self.moves_to_escape_check(other_player, threatening_pieces)) == 0:
                          self.illegal_move_by(self.player_turn)
@@ -135,19 +135,27 @@ class MiniShogi:
         Checks if piece is eligible to be promoted and promotes it accordingly.
         Returns a boolean to indicate success.
         """
-        pass
+        #piece has already been moved to end_pos successfully
+        piece = self.pos_to_piece[end_pos]
+        if piece.promote_piece(start_pos, end_pos):
+            self.board[end_pos[0]][end_pos[1]] = '+' + self.board[end_pos[0]][end_pos[1]]
+            return True
+        else:
+            return False
+
     def make_move(self, param1, param2, move_type):
         """
         Determines the kind of move user is trying to make, and executes it while
         performing all validity checks
         Returns a boolean to indicate success.
         """
+        success = False
         if move_type == MoveType.MOVE:
             if self.move_piece(param1, param2):
                 if self.in_check(self.player_turn):
                     self.illegal_move_by(self.player_turn)
-                self.increment_turn()
-                return True
+                    return False
+                success =  True
             else:
                 self.illegal_move_by(self.player_turn)
                 return False
@@ -155,16 +163,32 @@ class MiniShogi:
             if self.drop_piece(param1, param2):
                 if self.in_check(self.player_turn):
                     self.illegal_move_by(self.player_turn)
-                self.increment_turn()
-                return True
+                    return False
+                success = True
             else:
                 self.illegal_move_by(self.player_turn)
                 return False
+        if move_type == MoveType.MOVE_AND_PROMOTE:
+            if self.move_piece(param1, param2):
+                if self.in_check(self.player_turn) or not(self.promote_piece(param1, param2)):
+                    self.illegal_move_by(self.player_turn)
+                    return False
+                success = True
+        #covers pawn dropped in promotion zone and pawn in promotion area without being promoted cases
+        if success:
+            piece = self.pos_to_piece[param2]
+            if piece.piece_type == PieceType.PAWN:
+                promotion_zone = Piece.promotion_zone_for(self.player_turn)
+                if (param2 in promotion_zone) and not(piece.promoted):
+                    self.illegal_move_by(self.player_turn)
+                    return False
+        self.increment_turn()
+        return success
 
     def in_check(self, player):
         king_pos = self.get_king_pos(player)
         pieces = set()
-        player_other = self.get_opposing_player(player)
+        player_other = MiniShogi.get_opposing_player(player)
         pieces = self.player_to_pieces[player_other]
         threatening_pieces = set()
         for piece_pos in pieces:
@@ -176,7 +200,7 @@ class MiniShogi:
     def moves_to_escape_check(self, player, threatening_pieces):
         king_pos = self.get_king_pos(player)
         moves_list = []
-        player_other = self.get_opposing_player(player)
+        player_other = MiniShogi.get_opposing_player(player)
         #moves where the king moves
         king_moves_set = Piece.king_moves(king_pos)
         del self.pos_to_piece[king_pos]
@@ -187,6 +211,7 @@ class MiniShogi:
             valid_move = move not in self.player_to_pieces[player]
             if saves_from_check and valid_move:
                 moves_list.append((MoveType.MOVE, king_pos, move))
+
         #moves where other pieces block or capture the attacking pieces
         pos_to_moves = self.pos_to_moves_mapping(player)
         if len(threatening_pieces) <= 1:
@@ -208,6 +233,16 @@ class MiniShogi:
                 for pos in pos_to_moves:
                     if piece_pos in pos_to_moves[pos]:
                         moves_list.append((MoveType.MOVE, pos, piece_pos))
+
+        #add moves that include promotion
+        for move in moves_list:
+            if move[0] == MoveType.MOVE:
+                promotion_zone = Piece.promotion_zone_for(player)
+                if (move[1] in promotion_zone) or (move[2] in promotion_zone):
+                    piece = self.pos_to_piece[move[1]]
+                    if piece.piece_type == PieceType.KING or piece.piece_type == PieceType.GOLD_GENERAL:
+                        continue 
+                    moves_list.append((MoveType.MOVE_AND_PROMOTE, move[1], move[2]))
 
         return moves_list
 
@@ -243,7 +278,7 @@ class MiniShogi:
                 return piece_pos
         return None
 
-    def get_opposing_player(self, player):
+    def get_opposing_player(player):
         if player == Player.UPPER:
             return Player.LOWER
         else:
@@ -263,4 +298,4 @@ class MiniShogi:
     def illegal_move_by(self, player):
         self.game_end = True
         self.game_end_cause = GameEnd.ILLEGAL_MOVE
-        self.winner = self.get_opposing_player(player)
+        self.winner = MiniShogi.get_opposing_player(player)
