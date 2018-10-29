@@ -15,7 +15,8 @@ class MiniShogi:
     turn_count: An integer representing the number of turns already been played.
     """
 
-    def __init__(self, board, captured_lower, captured_UPPER, turn_count):
+    def __init__(self, board, captured_lower, captured_UPPER, turn_count, interactive):
+        self.interactive = interactive
         self.board = board
         self.captured = {}
         self.captured[Player.LOWER] = captured_lower
@@ -41,10 +42,11 @@ class MiniShogi:
         Converts the board state into string form and outputs it to the screen.
         Also prints the player whose turn it is and returns user input
         """
-        board_string = utils.stringifyBoard(self.board)
-        print(board_string)
-        print ("Captures UPPER:" + utils.stringifyCaptured(self.captured[Player.UPPER]))
-        print ("Captures lower:" + utils.stringifyCaptured(self.captured[Player.LOWER]))
+        if (self.interactive):
+            board_string = utils.stringifyBoard(self.board)
+            print(board_string)
+            print ("Captures UPPER:" + utils.stringifyCaptured(self.captured[Player.UPPER]))
+            print ("Captures lower:" + utils.stringifyCaptured(self.captured[Player.LOWER]) + '\n')
         threatening_pieces = self.in_check(self.player_turn)
         if len(threatening_pieces) > 0:
             possible_escape_moves = self.moves_to_escape_check(self.player_turn, threatening_pieces)
@@ -53,11 +55,14 @@ class MiniShogi:
                 self.game_end_cause = GameEnd.CHECKMATE
                 self.winner = MiniShogi.get_opposing_player(self.player_turn)
                 return None
-            print("Player " + string_mappings.player_string[self.player_turn] + " is in check")
-            for move in possible_escape_moves:
-                print(io_utils.move_to_string(move[0], move[1], move[2]))
-        input_str = input(string_mappings.player_string[self.player_turn] + "> ")
-        return input_str
+            if (self.interactive):
+                # print('\n')
+                print(string_mappings.player_string[self.player_turn] + "player is in check")
+                for move in possible_escape_moves:
+                    print(io_utils.move_to_string(move[0], move[1], move[2]))
+        if self.interactive and not(self.game_end):
+            input_str = input(string_mappings.player_string[self.player_turn] + "> ")
+            return input_str
 
     def move_piece(self, start_pos, end_pos):
         """
@@ -182,7 +187,7 @@ class MiniShogi:
                 if (param2 in promotion_zone) and not(piece.promoted):
                     self.illegal_move_by(self.player_turn)
                     return False
-        self.increment_turn()
+            self.increment_turn()
         return success
 
     def in_check(self, player):
@@ -241,7 +246,7 @@ class MiniShogi:
                 if (move[1] in promotion_zone) or (move[2] in promotion_zone):
                     piece = self.pos_to_piece[move[1]]
                     if piece.piece_type == PieceType.KING or piece.piece_type == PieceType.GOLD_GENERAL:
-                        continue 
+                        continue
                     moves_list.append((MoveType.MOVE_AND_PROMOTE, move[1], move[2]))
 
         return moves_list
