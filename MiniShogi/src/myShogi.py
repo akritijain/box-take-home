@@ -1,10 +1,8 @@
-from minishogi import MiniShogi, GameEnd
-from utils import input_parser
+from utils.enum_types import GameEnd, MoveType
+from utils import io_utils
+from utils import string_mappings
 from pieces import Player
-import numpy as np
-
-player_string = {Player.UPPER: 'UPPER', Player.LOWER : 'lower'}
-game_end_string = {GameEnd.ILLEGAL_MOVE : 'Illegal move.', GameEnd.CHECKMATE : "Checkmate.", GameEnd.TIE: "Too Many Moves."}
+from minishogi import MiniShogi
 
 def main():
     #initialize game
@@ -14,14 +12,15 @@ def main():
     new_game = MiniShogi(board, capturedL, capturedU, 0)
     #main loop
     while not(new_game.game_end):
-        new_game.display_game_state()
-        input_str = input(player_string[new_game.player_turn] + "> ")
-        move_type, input1, input2 = input_parser.parse_move(input_str)
+        input_str = new_game.game_state()
+        if (input_str == None):
+            break
+        move_type, input1, input2 = io_utils.parse_move(input_str)
         new_game.make_move(input1, input2, move_type)
-    if new_game.winner == None:
-        print("Tie Game. " + game_end_string[GameEnd.TIE])
+    if new_game.game_end == GameEnd.TIE:
+        print("Tie Game. " + string_mappings.game_end_string[GameEnd.TIE])
     else:
-        print(player_string[new_game.winner] + " player wins. " + game_end_string[new_game.game_end_cause])
+        print(string_mappings.player_string[new_game.winner] + " player wins. " + string_mappings.game_end_string[new_game.game_end_cause])
 
 if __name__ == "__main__":
     main()

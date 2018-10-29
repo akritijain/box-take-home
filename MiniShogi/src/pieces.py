@@ -1,20 +1,6 @@
-from enum import Enum
+from utils.enum_types import PieceType, Player
+from utils import string_mappings
 
-class PieceType(Enum):
-    KING = 1
-    ROOK = 2
-    BISHOP = 3
-    GOLD_GENERAL = 4
-    SILVER_GENERAL = 5
-    PAWN = 6
-
-class Player(Enum):
-    LOWER = 1
-    UPPER = 2
-
-# maps piece string representation to piece enum
-str_to_piece = {'k' : PieceType.KING, 'r' : PieceType.ROOK, 'b' : PieceType.BISHOP,
-'g' : PieceType.GOLD_GENERAL, 's' : PieceType.SILVER_GENERAL, 'p' : PieceType.PAWN}
 # board size
 N = 5
 
@@ -30,15 +16,15 @@ class Piece:
             player = Player.LOWER
             if (piece_str[1].isupper()):
                 player = Player.UPPER
-            return Piece(str_to_piece[piece_str[1].lower()], True, player)
+            return Piece(string_mappings.str_to_piece[piece_str[1].lower()], True, player)
         #regular piece
         else:
             player = Player.LOWER
             if(piece_str.isupper()):
                 player = Player.UPPER
-            return Piece(str_to_piece[piece_str.lower()], False, player)
+            return Piece(string_mappings.str_to_piece[piece_str.lower()], False, player)
 
-    def possible_moves(self, pos):
+    def possible_moves(self, pos, pos_to_piece):
         """
         Takes a position as a input and returns the set of values the current
         piece can move to from that position.
@@ -49,9 +35,9 @@ class Piece:
             if self.piece_type == PieceType.KING:
                 return Piece.king_moves(pos)
             if self.piece_type == PieceType.ROOK:
-                return Piece.rook_moves(pos)
+                return Piece.rook_moves(pos, pos_to_piece)
             if self.piece_type == PieceType.BISHOP:
-                return Piece.bishop_moves(pos)
+                return Piece.bishop_moves(pos, pos_to_piece)
             if self.piece_type == PieceType.GOLD_GENERAL:
                 return Piece.gold_general_moves(pos, self.player)
             if self.piece_type == PieceType.SILVER_GENERAL:
@@ -105,27 +91,35 @@ class Piece:
                 end_pos.add((left, down))
         return end_pos
 
-    def rook_moves(pos):
+    def rook_moves(pos, pos_to_piece):
         """
         Helper function that takes a position as input and returns a set of
         all positions a rook piece can move to from there
         """
         end_pos = set()
         #go right
-        for i in range(pos[0], N):
+        for i in range(pos[0]+1, N):
             end_pos.add((i, pos[1]))
+            if (i, pos[1]) in pos_to_piece:
+                break
         #go left
-        for i in range(0, pos[0]):
+        for i in range(pos[0]-1, -1, -1):
             end_pos.add((i, pos[1]))
+            if (i, pos[1]) in pos_to_piece:
+                break
         #go up
-        for i in range(pos[1], N):
+        for i in range(pos[1]+1, N):
             end_pos.add((pos[0], i))
+            if (pos[0], i) in pos_to_piece:
+                break
         #go down
-        for i in range(0, pos[1]):
+        for i in range(pos[1]-1, -1, -1):
             end_pos.add((pos[0], i))
+            if (pos[0], i) in pos_to_piece:
+                break
         return end_pos
 
-    def bishop_moves(pos):
+    def bishop_moves(pos, pos_to_piece):
         """
         Helper function that takes a position as input and returns a set of
         all positions a bishop piece can move to from there
@@ -135,21 +129,29 @@ class Piece:
         i = 1
         while ((pos[0] + i) < N) and ((pos[1] + i) < N):
             end_pos.add((pos[0] + i, pos[1] + i))
+            if (pos[0] + i, pos[1] + i) in pos_to_piece:
+                break
             i += 1
         #bottom right diagonal
         i = 1
         while ((pos[0] + i) < N) and ((pos[1] - i) >= 0):
             end_pos.add((pos[0] + i, pos[1] - i))
+            if (pos[0] + i, pos[1] - i) in pos_to_piece:
+                break
             i += 1
         #top left diagonal
         i = 1
         while ((pos[0] - i) >= 0) and ((pos[1] + i) < N):
-            end_pos.add((pos[0] + i, pos[1] - i))
+            end_pos.add((pos[0] - i, pos[1] + i))
+            if (pos[0] - i, pos[1] + i) in pos_to_piece:
+                break
             i += 1
         #bottom left diagonal
         i = 1
         while ((pos[0] - i) >= 0) and ((pos[1] - i) >= 0):
-            end_pos.add((pos[0] + i, pos[1] - i))
+            end_pos.add((pos[0] - i, pos[1] - i))
+            if (pos[0] - i, pos[1] - i) in pos_to_piece:
+                break
             i += 1
         return end_pos
 
@@ -226,3 +228,37 @@ class Piece:
         if up < N and up >= 0:
             end_pos.add((pos[0], up))
         return end_pos
+
+    def attack_king(self, piece_pos, king_pos, pos_to_piece):
+        if self.piece_type == PieceType.BISHOP:
+            attack_moves = set()
+            if king_pos[0] > piece_pos[0]:
+                inc_0 = 1
+            else:
+                inc_0 = -1
+            if king_pos[1] > piece_pos[1]:
+                inc_1 = 1
+            else:
+                inc_1 = -1
+            x = piece_pos[0] + inc_0
+            y = piece_pos[1] + inc_1
+            while not(x == king_pos[0]) and not(y == king_pos[1]):
+                attack_moves.add((x, y))
+                x += inc_0
+                y += inc_1
+            return attack_moves
+        elif self.piece_type == PieceType.ROOK:
+            attack_moves = set()
+            if king_pos[0] == piece_pos[0]:
+                inc = 1
+                if king_pos[1] < piece_pos[1]:
+                    inc = -1
+                for y in range(piece_pos[1] + inc, king_pos[1], inc):
+                    attack_moves.add((king_pos[0], y))
+            if king_pos[1] == piece_pos[1]:
+                inc = 1
+                if king_pos[0] < piece_pos[0]:
+                    inc = -1
+                for x in range(piece_pos[0] + inc, king_pos[0], inc):
+                    attack_moves.add((king_pos[0], x))
+            return attack_moves
