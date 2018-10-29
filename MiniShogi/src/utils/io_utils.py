@@ -26,6 +26,15 @@ def parse_move(input_str):
             return None, None, None
         return MoveType.DROP, string_mappings.str_to_piece[input_words[1]], pos
 
+def sort_and_print_moves(moves_list):
+    moves_string = []
+    for move in moves_list:
+        string_move = move_to_string(move[0], move[1], move[2])
+        moves_string.append(string_move)
+    moves_string.sort()
+    for move in moves_string:
+        print(move)
+
 def pos_from_string(str_pos):
     if not(len(str_pos) == 2):
         return None

@@ -58,8 +58,7 @@ class MiniShogi:
             if (self.interactive):
                 # print('\n')
                 print(string_mappings.player_string[self.player_turn] + " player is in check")
-                for move in possible_escape_moves:
-                    print(io_utils.move_to_string(move[0], move[1], move[2]))
+                io_utils.sort_and_print_moves(possible_escape_moves)
         if self.interactive and not(self.game_end):
             input_str = input(string_mappings.player_string[self.player_turn] + "> ")
             return input_str

@@ -23,6 +23,8 @@ def file_mode(filename):
             break
         move_type, input1, input2 = io_utils.parse_move(move)
         game.make_move(input1, input2, move_type)
+    prev_turn = MiniShogi.get_opposing_player(game.player_turn)
+    print(string_mappings.player_string[prev_turn] + " player action: " + move)
     game.interactive = True
     game.game_state()
     if game.game_end == GameEnd.TIE:
