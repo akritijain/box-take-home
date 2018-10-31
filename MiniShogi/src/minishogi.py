@@ -37,7 +37,7 @@ class MiniShogi:
         self.game_end_cause = None
         self.winner = None
 
-    def game_state(self):
+    def game_state(self, get_input):
         """
         Converts the board state into string form and outputs it to the screen.
         Also prints the player whose turn it is and returns user input
@@ -60,8 +60,9 @@ class MiniShogi:
                 print(string_mappings.player_string[self.player_turn] + " player is in check")
                 io_utils.sort_and_print_moves(possible_escape_moves)
         if self.interactive and not(self.game_end):
-            input_str = input(string_mappings.player_string[self.player_turn] + "> ")
-            return input_str
+            if get_input:
+                input_str = input(string_mappings.player_string[self.player_turn] + "> ")
+                return input_str
 
     def move_piece(self, start_pos, end_pos):
         """
@@ -76,8 +77,21 @@ class MiniShogi:
         piece = self.pos_to_piece[start_pos]
         if not(piece.player == self.player_turn):
             return False
+
+        behind = self.cell_behind(start_pos)
+        piece_behind = None
+        if behind[0] < N and behind[0] >= 0 and behind[1] < N and behind[1]>=0:
+            piece_str = self.board[behind[0]][behind[1]]
+            if len(piece_str) > 0:
+                piece_behind = Piece.piece_from_string(piece_str)
+        if not(piece_behind == None) and not(piece_behind.player == self.player_turn):
+            piece_behind = None
+
         #check if it's a valid move
         moves = piece.possible_moves(start_pos, self.pos_to_piece)
+        if not(piece_behind == None):
+            moves = moves.union(piece_behind.possible_moves(start_pos, self.pos_to_piece))
+
         if not(end_pos in moves):
             return False
         #check if the end pos has a piece in it and which player it belongs to
@@ -189,6 +203,12 @@ class MiniShogi:
             self.increment_turn()
         return success
 
+    def cell_behind(self, pos):
+        if self.player_turn == Player.UPPER:
+            return (pos[0], pos[1] + 1)
+        else:
+            return (pos[0], pos[1] - 1)
+
     def in_check(self, player):
         king_pos = self.get_king_pos(player)
         pieces = set()
@@ -290,7 +310,7 @@ class MiniShogi:
 
     def increment_turn(self):
         self.turn_count += 1
-        if (self.turn_count == 200):
+        if (self.turn_count == 400 ):
             self.game_end = True
             self.game_end_cause = GameEnd.TIE
 

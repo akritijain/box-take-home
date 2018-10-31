@@ -17,23 +17,36 @@ def file_mode(filename):
         board[pos[0]][pos[1]] = pair['piece']
     game = MiniShogi(board, contents['lowerCaptures'],contents['upperCaptures'], 0, False)
     moves = contents['moves']
+    previous_move = Player.LOWER
     for move in moves:
-        game.game_state()
+        game.game_state(True)
         if game.game_end:
             break
+        previous_move = game.player_turn
+        # print(previous_move)
         move_type, input1, input2 = io_utils.parse_move(move)
         game.make_move(input1, input2, move_type)
-    prev_turn = MiniShogi.get_opposing_player(game.player_turn)
-    print(string_mappings.player_string[prev_turn] + " player action: " + move)
+
+    print(string_mappings.player_string[previous_move] + " player action: " + move)
+    next_move = MiniShogi.get_opposing_player(previous_move)
     game.interactive = True
-    game.game_state()
-    if game.game_end == GameEnd.TIE:
+    game.game_state(False)
+    if not(game.game_end):
+        print(string_mappings.player_string[next_move] + "> ")
+    # else:
+    #     while not(game.game_end):
+    #         input_str = game.game_state()
+    #         if (input_str == None):
+    #             break
+    #         move_type, input1, input2 = io_utils.parse_move(input_str)
+    #         game.make_move(input1, input2, move_type)
+
+    if game.game_end_cause == GameEnd.TIE:
         print("Tie Game. " + string_mappings.game_end_string[GameEnd.TIE])
     elif game.winner == None:
         return
     else:
         print(string_mappings.player_string[game.winner] + " player wins.  " + string_mappings.game_end_string[game.game_end_cause])
-
 
 def interactive_mode():
     #initialize game
@@ -43,7 +56,7 @@ def interactive_mode():
     new_game = MiniShogi(board, capturedL, capturedU, 0, True)
     #main loop
     while not(new_game.game_end):
-        input_str = new_game.game_state()
+        input_str = new_game.game_state(True)
         if (input_str == None):
             break
         move_type, input1, input2 = io_utils.parse_move(input_str)
